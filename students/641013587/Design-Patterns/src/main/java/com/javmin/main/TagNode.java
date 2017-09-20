@@ -3,6 +3,8 @@ package com.javmin.main;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.javmin.main.TagNode.TagBuilder;
+
 public class TagNode {
 	
 	private String tagName;
@@ -14,11 +16,72 @@ public class TagNode {
 		String value;
 	}
 	
-	public TagNode(String name){
-		this.tagName=name;
+	private TagNode(){
 	}
 	
-	class TagBuilder{
+	public static class TagBuilder{
+		String tagName;
+		String tagValue;
+		List<TagNode> children=new ArrayList<>();
+		List<Attribute> attributes = new ArrayList<>();
+		private TagBuilder parent;
+		
+		private TagBuilder(){
+		}
+		
+		public static TagBuilder create(String name){
+			 TagBuilder tagBuilder = new TagBuilder();
+			 tagBuilder.tagName=name;
+			 return tagBuilder;
+		}
+		
+		public TagBuilder tagValue(String tagValue){
+			this.tagValue=tagValue;
+			return this;
+		}
+		
+		public TagBuilder children(String name){
+			TagBuilder create = TagBuilder.create(name);
+			TagNode node=create.toTagNode();
+			this.children.add(node);
+			create.parent=this;
+			return create;
+		}
+
+		private TagNode toTagNode() {
+			TagNode tagNode = new TagNode();
+			TagBuilder top=getTop(this);
+			tagNode.tagName=top.tagName;
+			tagNode.attributes=top.attributes;
+			tagNode.children=top.children;
+			tagNode.tagValue=top.tagValue;
+			return tagNode;
+		}
+
+		private TagBuilder getTop(TagBuilder tagBuilder) {
+			if(tagBuilder.parent!=null){
+				return getTop(tagBuilder.parent);
+			}
+			return tagBuilder;
+		}
+
+		public TagBuilder attributes(String key, String value) {
+			Attribute attribute = new Attribute();
+			attribute.name=key;
+			attribute.value=value;
+			this.attributes.add(attribute);
+			return this;
+		}
+
+		public TagBuilder brother(String name) {
+			TagBuilder parent2 = this.parent;
+			/*if(parent2==null){
+				parent2=new TagBuilder();
+				parent2.children.add(this.toTagNode());
+				this.parent=parent2;
+			}*/
+			return parent2.children(name);
+		}
 		
 		
 	}
@@ -84,9 +147,14 @@ public class TagNode {
 	}
 
 	public static void main(String[] args) {
-		TagNode tagNode = new TagNode("order");
+		TagBuilder builder = 
+			TagBuilder.create("order").children("line-items")
+			.children("line-item").attributes("pid","p3677").attributes("qty", "3").brother("line-item").attributes("pid","p9877").attributes("qty", "10");
+		TagNode tagNode = builder.toTagNode();
+		System.out.println(tagNode.toXml());
+		/*TagNode tagNode = new TagNode("order");
 		TagNode lineItemsTag = new TagNode("line-items");
-		TagNode tag1 = new TagNode("line-item");
+		TagNode tag1 = new TagNode("");
 		tag1.setAttributes("pid","p3677");
 		tag1.setAttributes("qty", "3");
 		lineItemsTag.getChildren().add(tag1);
@@ -95,7 +163,7 @@ public class TagNode {
 		tag2.setAttributes("qty", "10");
 		lineItemsTag.getChildren().add(tag2);
 		tagNode.getChildren().add(lineItemsTag);
-		System.out.println(tagNode.toXml());
+		System.out.println(tagNode.toXml());*/
 	}
 	
 }
